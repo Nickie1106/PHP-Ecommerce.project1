@@ -1,0 +1,660 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+
+/* Body and Font Styling */
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Headings */
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+h4 {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+h5 {
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+h6 {
+    color: white;
+}
+
+
+/* Navbar */
+.navbar {
+    font-size: 18px;
+    padding-top: 1.2rem !important;
+    padding-bottom: 1.2rem !important;
+    top: 0;
+    left: 0;
+    box-shadow: 0 5px 10px;
+    background-color: #333 !important; /* 背景色を黒に設定 */
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    padding: 0 15px;
+    color: #ccc; /* ナビゲーションリンクの色を薄いグレーに設定 */
+    transition: 0.4s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active,
+.navbar-dark .navbar-nav .nav-link i:hover {
+    color: white; /* ホバー時にリンクの色を白に設定 */
+}
+
+.nav-buttons {
+    margin-left: 60%;
+}
+
+.navbar .fa-shopping-bag,
+.navbar .fa-user {
+    font-size: 1.2rem;
+    padding: 0 1rem;
+    color: #ccc; /* アイコンの色を薄いグレーに設定 */
+    transition: 0.4s ease;
+    cursor: pointer;
+}
+
+.navbar .fa-shopping-cart:hover,
+.navbar .fa-user:hover {
+    color: white; /* ホバー時にアイコンの色を白に設定 */
+}
+
+/* Button Styling */
+button {
+    font-size: 0.7rem;
+    font-weight: 700;
+    outline: none;
+    border: none;
+    background-color: #333;
+    color: white;
+    padding: 13px 20px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0066cc;
+}
+
+/* Main Image (Responsive) */
+#home {
+    background-image: url('../img/back.jpg');
+    width: 100%;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#home span {
+    color: darkblue;
+}
+
+
+
+/* Responsive Styles */
+/* 基本のレスポンシブスタイル */
+@media only screen and (max-width: 1200px) {
+    .navbar {
+        font-size: 16px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.3rem;
+    }
+
+    h4 {
+        font-size: 1rem;
+    }
+
+    .product {
+        margin-bottom: 1.5rem;
+    }
+
+    .product img {
+        width: 100%;
+    }
+}
+
+/* 中小サイズデバイス用（例えばタブレット） */
+@media only screen and (max-width: 768px) {
+    .navbar {
+        font-size: 14px;
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    .nav-buttons {
+        margin-left: 10%;
+        margin-top: 1rem;
+    }
+
+    .nav-buttons ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .nav-buttons ul .fas {
+        margin: 15px 0;
+    }
+
+    .product {
+        margin-bottom: 1rem;
+    }
+
+    .product img {
+        width: 100%;
+    }
+
+    #home {
+        height: 50vh;
+    }
+
+    .cart table {
+        width: 100%;
+    }
+
+    .cart td, .cart th {
+        font-size: 14px;
+    }
+
+    .cart-total table {
+        max-width: 100%;
+    }
+
+    .checkout-btn {
+        width: 100%;
+    }
+
+    #login-form input, #register-form input {
+        width: 80%;
+    }
+
+    #account-form input.form-control {
+        width: 80%;
+    }
+}
+
+/* 小型デバイス用（スマートフォン） */
+@media only screen and (max-width: 480px) {
+    .navbar {
+        font-size: 12px;
+        padding-top: 0.8rem !important;
+        padding-bottom: 0.8rem !important;
+    }
+
+    .navbar .nav-link {
+        font-size: 14px;
+    }
+
+    .nav-buttons {
+        margin-left: 0;
+    }
+
+    .product img {
+        width: 100%;
+    }
+
+    #home {
+        height: 40vh;
+        padding: 0 1rem;
+    }
+
+    .cart td {
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .cart .product-info p {
+        font-size: 12px;
+    }
+
+    .checkout-btn {
+        width: 100%;
+    }
+
+    .small-img-group {
+        flex-direction: column;
+    }
+
+    .small-img-col {
+        flex: none;
+        width: 100%;
+    }
+
+    .single-product input {
+        width: 60px;
+    }
+
+    #login-form input, #register-form input, #account-form input.form-control {
+        width: 90%;
+    }
+
+    #featured .row.container-fluid {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+
+/* product */
+.product {
+    cursor: pointer;
+    margin-bottom: 2rem;
+}
+.product img{
+    transition: 0.3ms ease;;
+}
+
+.product:hover img{
+    opacity: 0.7;
+}
+
+
+/* barner */
+#banner{
+    background-image: url('../img/backimages2.jpg');
+    width: 100%;
+    height: 60vh;
+    background-size: cover;
+    background-position-x: center;
+    background-position-y: 80px;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#banner h1{
+    color: darkblue;
+}
+
+#banner button {
+    background-color: darkblue;
+}
+
+#banner button:hover{
+    background-color: darkblue;
+}
+
+/* フッタースタイル */
+footer {
+
+    background-color: #333; /* フッターの背景色 */
+    color: #ccc; /* テキストカラー */
+    padding: 20px 0;
+}
+
+/* 支払い方法のロゴ */
+.copyright img {
+    width: 120px; /* 支払い方法のロゴサイズ */
+    height: auto;
+}
+
+/* コピーライトテキスト */
+.copyright p {
+    color: #ccc;
+    font-size: 14px;
+    margin: 0;
+    text-align: center;
+}
+
+/* ソーシャルアイコン */
+.copyright a {
+    color: #ccc;
+    font-size: 25px;
+    margin: 0 20px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.copyright a:hover {
+    color: #fff; /* ホバー時にアイコンの色を白に変更 */
+}
+
+
+.small-img-group {
+    display: flex;
+    justify-content: space-between;
+}
+.small-img-col {
+    flex: 1;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.single-product input{
+    width: 50px;
+    height: 40px;
+    padding-left: 10px;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+.single-product input:focus{
+    outline: none;
+}
+
+.single-product .buy-btn{
+    background-color: #333;
+    opacity: 1;
+    transition: 0.4s all;;
+}
+
+.single-product.buy-btn:hover{
+    background-color: #222;
+}
+
+/* カート */ 
+
+.cart table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cart .product-info {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cart td {
+    padding: 20px 10px;
+}
+
+.cart td img {
+    width: 80px;
+    height: 80px;
+    margin-right: 10px;
+}
+
+.cart th {
+    text-align: left;
+    padding: 5px 10px;
+    color: #fff;
+    background-color: #333;
+}
+
+.cart .edit-btn {
+    color: #333;
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.cart .product-info p {
+    margin: 3px;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cart-total table {
+    width: 100%;
+    max-width: 500px;
+    border-top: 3px solid;
+}
+
+td:last-child {
+    text-align: right;
+}
+
+th:last-child {
+    text-align: right;
+}
+
+.checkout-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.checkout-btn {
+    background-color: #333;
+    color: #fff;
+}
+
+.cart input[type="number"] {
+    width: 70px; 
+    text-align: center;
+    padding: 5px;
+}
+
+/* ログイン */
+#login-form{
+    width: 50%;
+    margin: 5px auto;
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #333;
+}
+
+#login-form input{
+    width: 50%;
+    margin: 5px auto;
+}
+
+
+#login-form #login-btn{
+    background-color: #333;
+    color: #fff;
+}
+
+#login-form #register-url{
+    color: #333;
+}
+
+
+/* Register*/
+#register-form{
+    width: 50%;
+    margin: 5px auto;
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #333;
+}
+
+#register-form input{
+    width: 50%;
+    margin: 5px auto;
+}
+
+
+#register-form #register-btn{
+    background-color: #333;
+    color: #fff;
+}
+
+#register-form #login-url{
+    color: #333;
+}
+/* Account */
+#account-form {
+    width: 100%; 
+    max-width: 400px; 
+    margin: 35px auto;
+    text-align: center;
+    padding: 20px;
+}
+
+#account-form input.form-control {
+    width: 100%; 
+    max-width: 300px; 
+    text-align: center;
+    padding: 10px;
+    margin: 10px auto; 
+}
+
+#account-form #change-pass-btn {
+    color: #fff;
+    background-color: #333;
+    width: 100%;
+    max-width: 200px;
+}
+
+.account-info #order-btn, #logout-btn {
+    color: #333;
+    text-decoration: none;
+}
+
+#checkout-form .checkout-small-element{
+    display: inline-block;
+    width: 48%;
+    margin: 10px auto;
+}
+
+#checkout-form .checkout-large-element{
+    width: 95%;
+}
+
+#checkout-form .checkout-btn-container{
+    margin: 10px;
+    text-align: right;
+    margin-right: 40px;
+}
+
+#checkout-form #checkout-btn{
+    color: #fff;
+    background-color: #333;
+}
+
+#contact span{
+    color: lightskyblue;
+}
+
+.remove-link {
+    background: none;
+    border: none;
+    color: #FF6347; /* 任意の色（画像の色に近いものを指定） */
+    text-decoration: none;
+    font-size: 14px; /* 調整可能 */
+    cursor: pointer;
+    padding: 0;
+    margin-left: 30%;
+}
+
+.remove-link:hover {
+    text-decoration: underline;
+}
+/* Table styling */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.orders-table th,
+.orders-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.orders-table th {
+    background-color: lightblue; /* Orange color */
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.orders-table tr:nth-child(even) {
+    background-color: white;
+}
+
+/* Button styling */
+.btn-order-details {
+    background-color: blue;/* Orange color */
+    color: lightblue;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.details-button:hover {
+    background-color: #e65a2c;
+}
+#featured .container {
+    width: 100%;
+    max-width: 100%;
+}
+
+#featured .row.container-fluid {
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.orders-table th, .orders-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.orders-table th {
+    background-color: #ff6a00; /* ヘッダーの背景色 */
+    color: white;
+}
+
+.orders-table td {
+    vertical-align: middle;
+}
+
+.order-details-btn {
+    background-color: #ff6a00; /* ボタンの背景色 */
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.order-details-btn:hover {
+    background-color: #e65b00; /* ボタンホバー時の色 */
+}
+
+.cart-quantity{
+    background-color: #ff6a00;
+    padding: 2px 5px;
+    color: white;
+    border-radius: 50%;
+    margin: -2px;
+}
