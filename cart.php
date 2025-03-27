@@ -1,92 +1,87 @@
-<?php  
-session_start(); // セッションの開始はファイルの一番上に配置
+<?php 
+session_start();
+include('config.php');
 
-$servername = "localhost"; 
-$username = "nishimura"; 
-$password = "nishimura"; 
-$dbname = "nishimura_php_project"; 
-
-// データベース接続
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// カートが存在しない場合に初期化
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
 }
 
-// カートの合計金額を計算する関数
+// 合計金額を計算する関数
 function calculateTotal() {
     $total = 0;
-    if (isset($_SESSION['cart'])) {
-        foreach ($_SESSION['cart'] as $item) {
-            $total += $item['product_price'] * $item['product_quantity'];
-        }
+    foreach ($_SESSION['cart'] as $item) {
+        $total += $item['product_price'] * $item['product_quantity'];
     }
     return $total;
 }
 
-// 商品追加処理
-if (isset($_POST['add_to_cart'])) {  // Add to Cartボタンの確認
-    if (!isset($_SESSION['cart'])) {
-        $_SESSION['cart'] = array();
-    }
-
+// カートに商品を追加する処理
+if (isset($_POST['add_to_cart'])) {
     $product_id = $_POST['product_id'];
     $product_name = $_POST['product_name'];
     $product_price = $_POST['product_price'];
     $product_image = $_POST['product_image'];
     $product_quantity = isset($_POST['product_quantity']) ? (int)$_POST['product_quantity'] : 1;
 
-    $item_exists = false;
-    foreach ($_SESSION['cart'] as &$item) {
-        if ($item['product_id'] == $product_id && $item['product_image'] == $product_image) {
-            $item['product_quantity'] += $product_quantity;
-            $item_exists = true;
-            break;
-        }
-    }
+    // 商品がカート内に存在するか確認
+    $index = array_search($product_id, array_column($_SESSION['cart'], 'product_id'));
 
-    if (!$item_exists) {
-        $product_array = array(
+    if ($index !== false) {
+        // 商品が存在する場合、数量を加算
+        $_SESSION['cart'][$index]['product_quantity'] += $product_quantity;
+    } else {
+        // 商品が存在しない場合、新規追加
+        $_SESSION['cart'][] = [
             'product_id' => $product_id,
             'product_name' => $product_name,
             'product_price' => $product_price,
             'product_image' => $product_image,
             'product_quantity' => $product_quantity,
-        );
-        $_SESSION['cart'][] = $product_array;
+        ];
     }
+
+    $_SESSION['total'] = calculateTotal(); // 合計金額を更新
 }
 
-// 商品削除
+// カートから商品を削除する処理
 if (isset($_POST['remove_product'])) {
     $product_id = $_POST['product_id'];
-    $product_image = $_POST['product_image'];
-    foreach ($_SESSION['cart'] as $key => $item) {
-        if ($item['product_id'] == $product_id && $item['product_image'] == $product_image) {
-            unset($_SESSION['cart'][$key]);
-            $_SESSION['cart'] = array_values($_SESSION['cart']);
-            break;
-        }
-    }
+    $_SESSION['cart'] = array_filter($_SESSION['cart'], function ($item) use ($product_id) {
+        return $item['product_id'] !== $product_id;
+    });
+    $_SESSION['cart'] = array_values($_SESSION['cart']); // キーを再生成
+    $_SESSION['total'] = calculateTotal(); // 合計金額を更新
 }
 
-// 数量編集
+// 商品数量を編集する処理
 if (isset($_POST['edit_quantity'])) {
     $product_id = $_POST['product_id'];
-    $product_quantity = (int)$_POST['product_quantity'];
+    $quantity = (int)$_POST['product_quantity'];
+
     foreach ($_SESSION['cart'] as &$item) {
-        if ($item['product_id'] == $product_id) {
-            $item['product_quantity'] = $product_quantity;
+        if ($item['product_id'] === $product_id) {
+            $item['product_quantity'] = $quantity;
             break;
         }
     }
+
+    $_SESSION['total'] = calculateTotal(); // 合計金額を更新
 }
 
-// 合計金額を取得
-$total = calculateTotal();
-$_SESSION['total'] = $total;
+// チェックアウト処理
+if (isset($_POST['checkout'])) {
+    if (empty($_SESSION['user_id'])) {
+        echo "<script>alert('ログインしていないため、注文できません。'); window.location.href='login.php';</script>";
+        exit;
+    }
 
-$conn->close();
+    header("Location: payment.php");
+    exit;
+}
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -95,28 +90,24 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Cart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-    <link rel="stylesheet" href="/layouts/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>layouts/assets/css/style.css">
 </head>
 <body>
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 fixed-top">
     <div class="container">
-        <h5>8</h5>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="collapse navbar-collapse nav-buttons" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="shop.php">Shop</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Blog</a></li>
                 <li class="nav-item"><a class="nav-link" href="contact.php">Contact us</a></li>
-                <li class="nav-item">
-                    <a href="cart.php"><i class="fas fa-shopping-bag"></i></a>
-                    <a href="account.php"><i class="fas fa-user"></i></a>
-                </li>
+                <li class="nav-item"><a href="cart.php"><i class="fas fa-shopping-bag"></i></a><a href="account.php"><i class="fas fa-user"></i></a></li>
             </ul>
         </div>
     </div>
@@ -136,15 +127,15 @@ $conn->close();
             <th>Subtotal</th>
         </tr>
 
-        <?php 
+        <?php
         $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
-        foreach($cart as $key => $value) {
+        foreach ($cart as $key => $value) {
             ?>
         <tr>
             <td>
                 <div class="product-info">
-                    <img src="layouts/assets/img/<?php echo $value['product_image']; ?>" alt="Product Image"/>
-                    <div>
+                <img src="<?php echo BASE_PATH . 'layouts/assets/img/' . $value['product_image']; ?>" alt="Product Image"/>
+                <div>
                         <p><?php echo $value['product_name']; ?></p>
                         <small><span>$</span><?php echo $value['product_price']; ?></small>
                         <br>
@@ -170,31 +161,30 @@ $conn->close();
                 <span class="product-price"><?php echo $value['product_quantity'] * $value['product_price']; ?></span>
             </td>
         </tr>
-
         <?php } ?>
-
-        <div class="cart-total">
-            <table>
-                <tr>
-                    <td>Total</td>
-                    <td>$<?php echo number_format($total, 2);?></td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="checkout-container">
-            <form method="POST" action="checkout.php">
-                <input type="submit" class="btn btn-success" value="Checkout" name="checkout">
-            </form>
-        </div>
     </table>
+    
+  
+        <?php foreach ($cart as $item) { ?>
+            <input type="hidden" name="product_ids[]" value="<?php echo $item['product_id']; ?>">
+            <input type="hidden" name="product_names[]" value="<?php echo $item['product_name']; ?>">
+            <input type="hidden" name="product_quantities[]" value="<?php echo $item['product_quantity']; ?>">
+            <input type="hidden" name="product_prices[]" value="<?php echo $item['product_price']; ?>">
+        <?php } ?>
+        <form action="checkout.php" method="post">
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-warning" name="checkout">チェックアウト</button>
+            </div>
+    </form>        
+    </div>
 </section>
 
+ 
 <!-- Footer -->
 <footer class="mt-5 py-5">
     <div class="row container mx-auto pt-5">
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
-            <img src="<?php echo BASE_URL; ?>layouts/assets/img/8logo.png" alt="8logo">
+            <img src="<?php echo BASE_PATH; ?>layouts/assets/img/8logo.png" alt="8logo">
             <p class="pt-3">We provide the best products for the most affordable prices</p>
         </div>
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
@@ -226,10 +216,10 @@ $conn->close();
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
             <h5 class="pb-2">Instagram</h5>
             <div class="row">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
             </div>
         </div>
     </div>
@@ -237,7 +227,7 @@ $conn->close();
     <div class="copyright mt-5">
         <div class="row container mx-auto">
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4">
-                <img src="<?php echo BASE_URL; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
+                <img src="<?php echo BASE_PATH; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
             </div>
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4 text-nowrap mb-2">
                 <p>eCommerce @ 2025 All Right Reserved</p>
@@ -250,8 +240,7 @@ $conn->close();
         </div>
     </div>
 </footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"></script>
+   
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVRUcI6KD3fQQ4hxLrv+2K6KWfquk9mFY5P0j4fsN2Xo3nr/YkT75sA0cUqgKn7g" crossorigin="anonymous"></script>
 </body>
 </html>

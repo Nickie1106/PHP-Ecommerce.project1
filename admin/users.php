@@ -1,20 +1,12 @@
 <?php
-// config.phpのインクルードパスを確認して正しく記述
-include_once('../config.php');  // config.phpが1つ上のディレクトリにある場合（パスを正しく設定してください）
-
+include_once('../config.php');
 session_start();
 
 if ($_SESSION['admin_login'] === false) {
-    header("location: " . BASE_URL . "index.php");  // BASE_URLを使用
+    header("location: " . BASE_PATH . "index.php");  // BASE_PATHを使用
     exit;
 }
 
-// DB接続
-try {
-    $dbh = new PDO("mysql:host=localhost;dbname=nishimura_php_project", "nishimura", "nishimura");
-} catch (PDOException $e) {
-    exit($e->getMessage());
-}
 
 // 1ページあたりの表示件数を設定
 $rows = 10; // 適切な値に設定
@@ -30,7 +22,7 @@ $name = isset($_GET['name']) ? '%' . htmlspecialchars($_GET['name'], ENT_QUOTES,
 
 // 全件数取得
 $sql = $name ? "SELECT COUNT(*) FROM users WHERE name LIKE :name" : "SELECT COUNT(*) FROM users";
-$stmt = $dbh->prepare($sql);
+$stmt = $conn->prepare($sql);
 if ($name) {
     $stmt->bindParam(":name", $name);
 }
@@ -45,7 +37,7 @@ $prev = ($page > 1) ? $page - 1 : null;
 
 // ユーザー一覧取得
 $sql = $name ? "SELECT * FROM users WHERE name LIKE :name LIMIT :offset, :rows" : "SELECT * FROM users LIMIT :offset, :rows";
-$stmt = $dbh->prepare($sql);
+$stmt = $conn->prepare($sql);
 if ($name) {
     $stmt->bindParam(":name", $name);
 }
@@ -67,16 +59,16 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <div class="header-logo">
-                <h1><a href="<?php echo BASE_URL; ?>dashboard.php">管理画面</a></h1>
+                <h1><a href="<?php echo BASE_PATH; ?>dashboard.php">管理画面</a></h1>
             </div>
             <nav class="menu-right menu">
-                <a href="<?php echo BASE_URL; ?>index.php">ログアウト</a>
+                <a href="<?php echo BASE_PATH; ?>index.php">ログアウト</a>
             </nav>
         </div>
     </header>
@@ -98,7 +90,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <th>名前</th>
                                 <th>メールアドレス</th>
                                 <th>送信</th>
-                                <th>編集/削除</th>
+                                <th>削除</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -111,8 +103,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?php echo $user['email_verified_at'] ? '受信済み' : '未送信'; ?>
                                 </td>
                                 <td>
-                                    <a href="<?php echo BASE_URL; ?>edit_users.php?id=<?php echo $user['id']; ?>" class="btn btn-green">編集</a>
-                                    <a href="<?php echo BASE_URL; ?>delete_product.php?id=<?php echo $user['id']; ?>" class="btn btn-red" onclick="return confirm('本当に削除しますか？');">削除</a>
+                                    <a href="<?php echo BASE_PATH; ?>admin/delete_product.php?id=<?php echo $user['id']; ?>" class="btn btn-red" onclick="return confirm('本当に削除しますか？');">削除</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

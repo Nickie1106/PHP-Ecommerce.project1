@@ -1,33 +1,12 @@
 <?php
 
 session_start();
-
-$servername = "localhost"; 
-$username = "nishimura"; 
-$password = "nishimura"; 
-$dbname = "nishimura_php_project"; 
-
-// データベース接続
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// 接続エラーチェック
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-
-
-
-
-// if user has already registered, then take user to account page
-include('server/connection.php');
+include('config.php');
 
 if(isset($_SESSION['logged_in'])) {
     header('location: account.php');
     exit;
-};
-
-
+}
 
 if (isset($_POST['register'])) {
     $name = $_POST['name'];
@@ -35,39 +14,39 @@ if (isset($_POST['register'])) {
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    if ($password !== $confirmPassword) {
+//パスワード確認
+if ($password !== $confirmPassword) {
         header('location: register.php?error=Your passwords dont match');
-       
+        exit;
 
-
-
-    } else if (strlen($password) < 6) {
+} else if (strlen($password) < 6) {
         header('location: register.php?error=Passwords must be at least 6 characters');
-     
+        exit;
 
-
-
-
-    } else {
-        $stmt1 = $conn->prepare("SELECT COUNT(*) FROM users WHERE email=?");
-        $stmt1->bind_param('s', $email);
+     } else {
+        try{
+        $stmt1 = $conn->prepare("SELECT COUNT(*) FROM users WHERE email= :email");
+        $stmt1->bindParam(':email', $email);
         $stmt1->execute();
-        $stmt1->bind_result($num_rows);
-        $stmt1->fetch();
+        $num_rows = $stmt1->fetchColumn();
 
-        $stmt1->close();
+
 
         if ($num_rows != 0) {
             header('location: register.php?error=User with this email already exists');
             exit();
         } else {
-            // ここでSQL構文を修正します。
-            $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-            $stmt->bind_param('sss', $name, $email, md5($password));
+            // ユーザー登録
+            $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (:name, :email, :password)");
+            $hashedPassword = md5($password);
+
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':password', $hashedPassword);
 
             if ($stmt->execute()) {
 
-                $user_id = $stmt->insert_id;
+                $user_id = $conn->lastInsertId();
                 $_SESSION['user_id'] = $user_id;
                 $_SESSION['user_email'] = $email;
                 $_SESSION['user_name'] = $name;
@@ -79,64 +58,48 @@ if (isset($_POST['register'])) {
                 exit();
             }
         }
+    } catch (PDOException $e) {
+        header('location: register.php?error=Database error: ' . $e->getMessage());
+        exit();
     }
-}else if(isset($_SESSION['logged_in'])) {
-    header('location: account.php');
-    exit;
+}
+} else if (isset($_SESSION['logged_in'])) {
+    header("location: account.php");
+    
 }
 
+
 ?>
-
-
-
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"/>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>layouts/assets/css/style.css">
 </head>
 <body>
 
    <!-- Navbar -->
    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 fixed-top">
         <div class="container">
-         <h5>8</h5>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse nav-buttons" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="index.php">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="shop.php">Shop</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Blog</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="contact.php">Contact us</a>
-              </li>
-              <li class="nav-item">
-                <a href="cart.php"><i class="fas fa-shopping-bag"></i></a>
-                <a href="account.php"><i class="fas fa-user"></i></a>
-
-              </li>
-              
-            </ul>
-          </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse nav-buttons" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="shop.php">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Blog</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.php">Contact us</a></li>
+                    <li class="nav-item"><a href="cart.php"><i class="fas fa-shopping-bag"></i></a><a href="account.php"><i class="fas fa-user"></i></a></li>
+                </ul>
+            </div>
         </div>
-      </nav>
-   
-
-
-
+    </nav>
       <!--Register-->
       <section class="my-5 py-5">
         <div class="container text-center mt-3 pt-5">
@@ -182,7 +145,7 @@ if (isset($_POST['register'])) {
 <footer class="mt-5 py-5">
     <div class="row container mx-auto pt-5">
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
-            <img src="<?php echo BASE_URL; ?>layouts/assets/img/8logo.png" alt="8logo">
+            <img src="<?php echo BASE_PATH; ?>layouts/assets/img/8logo.png" alt="8logo">
             <p class="pt-3">We provide the best products for the most affordable prices</p>
         </div>
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
@@ -214,10 +177,10 @@ if (isset($_POST['register'])) {
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
             <h5 class="pb-2">Instagram</h5>
             <div class="row">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
             </div>
         </div>
     </div>
@@ -225,7 +188,7 @@ if (isset($_POST['register'])) {
     <div class="copyright mt-5">
         <div class="row container mx-auto">
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4">
-                <img src="<?php echo BASE_URL; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
+                <img src="<?php echo BASE_PATH; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
             </div>
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4 text-nowrap mb-2">
                 <p>eCommerce @ 2025 All Right Reserved</p>

@@ -1,7 +1,7 @@
 <?php
 session_start();  
 
-include('config.php');
+include_once('../config.server.php');
 
 // ログイン済みの場合はダッシュボードにリダイレクト
 if (isset($_SESSION['admin_login']) && $_SESSION['admin_login'] === true) {
@@ -16,12 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = md5($_POST['password']);  // パスワードをMD5で暗号化
 
     try {
-        // DB接続
-        $dbh = new PDO("mysql:host=localhost;dbname=nishimura_php_project", "nishimura", "nishimura");
-        $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        
         // 入力されたメールアドレスを使ってユーザーを検索
-        $stmt = $dbh->prepare("SELECT * FROM users WHERE email = :email AND password = :password");
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email AND password = :password");
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':password', $password);
         $stmt->execute();

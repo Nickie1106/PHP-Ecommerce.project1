@@ -1,6 +1,3 @@
-<?php 
-require_once __DIR__ . '/../config.php';
-?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,10 +5,10 @@ require_once __DIR__ . '/../config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="icon" href="<?php echo BASE_URL; ?>layouts/assets/img/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="<?php echo BASE_PATH; ?>layouts/assets/img/favicon.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"/>
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>layouts/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>layouts/assets/css/style.css">
 </head>
 <body>
 
@@ -25,24 +22,24 @@ require_once __DIR__ . '/../config.php';
         <div class="collapse navbar-collapse nav-buttons" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo BASE_URL; ?>index.php">Home</a>
+                    <a class="nav-link" href="<?php echo BASE_PATH; ?>index.php">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo BASE_URL; ?>shop.php">Shop</a>
+                    <a class="nav-link" href="<?php echo BASE_PATH; ?>shop.php">Shop</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#">Blog</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<?php echo BASE_URL; ?>contact.php">Contact us</a>
+                    <a class="nav-link" href="<?php echo BASE_PATH; ?>contact.php">Contact us</a>
                 </li>
                 <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>cart.php"><i class="fas fa-shopping-bag">
+                    <a href="<?php echo BASE_PATH; ?>cart.php"><i class="fas fa-shopping-bag">
                         <?php if(isset($_SESSION['quantity']) && $_SESSION['quantity'] !=0) { ?>
                             <span class="car-qunatity"><?php echo $_SESSION['quantity']; ?></span>
                         <?php } ?>
                     </i></a>
-                    <a href="<?php echo BASE_URL; ?>account.php"><i class="fas fa-user"></i></a>
+                    <a href="<?php echo BASE_PATH; ?>account.php"><i class="fas fa-user"></i></a>
                 </li>
             </ul>
         </div>

@@ -1,34 +1,59 @@
-<?php 
+<?php
 session_start();
-if (isset($_SESSION['admin_login']) && $_SESSION['admin_login'] === true) {
-    header("Location: dashboard.php");
+include('config.php'); // データベース接続を含む設定ファイルを読み込み
+
+// ログイン状態を確認
+if (!isset($_SESSION['logged_in'])) {
+    header('Location: ' . BASE_PATH . 'login.php');
     exit();
 }
 
-include('layouts/header.php'); 
-
-// データベース接続
-$servername = "localhost";
-$username = "nishimura";
-$password = "nishimura";
-$dbname = "nishimura_php_project";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// 接続エラーチェック
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// productsテーブルからすべての製品を取得
+// 商品情報を取得
 $sql = "SELECT * FROM products";
-$products = $conn->query($sql);
 
-// BASE_URLを定義（実際のURLに合わせて設定）
-if (!defined('BASE_URL')) {
-    define('BASE_URL', 'http://localhost/project-php/');
+// `$conn`が定義されているかチェック
+if (!isset($conn)) {
+    die("Database connection is not set.");
 }
+
+// クエリ実行とエラーチェック
+$stmt = $conn->prepare($sql);
+$stmt->execute();
+
+
+//取得したデータを配列として
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>layouts/assets/css/style.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 fixed-top">
+    <div class="container">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse nav-buttons" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="shop.php">Shop</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Blog</a></li>
+                <li class="nav-item"><a class="nav-link" href="contact.php">Contact us</a></li>
+                <li class="nav-item"><a href="cart.php"><i class="fas fa-shopping-bag"></i></a><a href="account.php"><i class="fas fa-user"></i></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
 <!-- Home Section -->
 <section id="home">
@@ -36,26 +61,7 @@ if (!defined('BASE_URL')) {
         <h5>NEW ARRIVALS</h5>
         <h1><span>Best Prices</span> This Season</h1>
         <p>Eshop offers the best products for the most affordable prices</p>
-        <button>Shop now</button>
-    </div>
-</section>
-
-<!-- Main Brand Section -->
-<section id="main-brand" class="my-5 pb-5">
-    <div class="container text-center mt-5 py-5">
-        <h3>Main Brand</h3>
-        <hr>
-        <p>Here is the main Brand</p>
-    </div>
-</section>
-
-<!-- Brand Section -->
-<section id="brand" class="container">
-    <div class="row">
-        <img class="img-fluid col-lg-3 col-md-6 col-sm-12" src="<?php echo BASE_URL; ?>layouts/assets/img/brand.logo1.png" alt="brand1">
-        <img class="img-fluid col-lg-3 col-md-6 col-sm-12" src="<?php echo BASE_URL; ?>layouts/assets/img/brand.logo2.png" alt="brand2">
-        <img class="img-fluid col-lg-3 col-md-6 col-sm-12" src="<?php echo BASE_URL; ?>layouts/assets/img/brand.logo3.png" alt="brand3">
-        <img class="img-fluid col-lg-3 col-md-6 col-sm-12" src="<?php echo BASE_URL; ?>layouts/assets/img/brand.logo4.png" alt="brand4">
+        <button onclick="window.location.href='<?php echo BASE_PATH; ?>shop.php';">Shop now</button>
     </div>
 </section>
 
@@ -65,11 +71,15 @@ if (!defined('BASE_URL')) {
     <hr>
     <p>Here you can check out our products</p>
     <div class="row mx-auto container">
-        <?php if ($products->num_rows > 0) { // 製品が存在する場合 ?>
-            <?php while ($row = $products->fetch_assoc()) { ?>
-                <div onclick="window.location.href='single_product.php?product_id=<?php echo $row['product_id']; ?>';" class="product text-center col-lg-3 col-md-4">
+    <?php if (count($products) > 0) { ?>
+            <?php foreach ($products as $row): ?>
+                <div onclick="window.location.href='<?php echo BASE_PATH; ?>single_product.php?product_id=<?php echo $row['product_id']; ?>';" class="product text-center col-lg-3 col-md-4">
                     <div class="card h-100 text-center">
-                        <img class="img-fluid mb-3" src="<?php echo BASE_URL; ?>layouts/assets/img/<?php echo $row['product_image']; ?>" alt="<?php echo $row['product_name']; ?>">
+                        <?php if (!empty($row['product_image'])): ?>
+                            <img class="img-fluid mb-3" src="<?php echo BASE_PATH . 'layouts/assets/img/' . htmlspecialchars($row['product_image']); ?>" alt="<?php echo htmlspecialchars($row['product_name']); ?>">
+                        <?php else: ?>
+                            <p>No Image Available</p>
+                        <?php endif; ?>
                         <div class="card-body">
                             <div class="star mb-2">
                                 <i class="fas fa-star"></i>
@@ -78,22 +88,21 @@ if (!defined('BASE_URL')) {
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
                             </div>
-                            <h5 class="p-name"><?php echo $row['product_name']; ?></h5>
-                            <h4 class="p-price">$<?php echo $row['product_price']; ?></h4>
-                            <a href="single_product.php?product_id=<?php echo $row['product_id']; ?>" class="btn btn-warning text-white w-100 mt-2">Buy Now</a>
+                            <h5 class="p-name"><?php echo htmlspecialchars($row['product_name']); ?></h5>
+                            <h4 class="p-price">$<?php echo htmlspecialchars($row['product_price']); ?></h4>
+                            <a href="<?php echo BASE_PATH; ?>single_product.php?product_id=<?php echo $row['product_id']; ?>" class="btn btn-warning text-white w-100 mt-2">Buy Now</a>
                         </div>
                     </div>
                 </div>
-            <?php } ?>
-        <?php } else { // 製品が存在しない場合 ?>
-            <p>No products found.</p>
-        <?php } ?>
+            <?php endforeach; ?>
+        
     </div>
 </div>
 
-<nav aria-label="Page navigation example" class="mx-auto">
-    <ul class="pagination mt-5 mx-auto">
-    </ul>
-</nav>
+</div>
+</body>
+</html>
 
-<?php include('layouts/footer.php'); ?>
+<?php include('layouts/footer.php'); 
+    }
+?>

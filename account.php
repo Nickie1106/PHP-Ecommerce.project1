@@ -1,6 +1,10 @@
 <?php
+
+use function PHPSTORM_META\type;
+
 session_start();
-include('server/connection.php');
+include("config.php");
+
 
 // ユーザーがログインしていない場合は、ログインページにリダイレクト
 if (!isset($_SESSION['logged_in'])) {
@@ -36,7 +40,7 @@ if (isset($_POST['change_password'])) {
         $user_email = $_SESSION['user_email'];
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE users SET user_password=? WHERE user_email=?");
-        $stmt->bind_param('ss', $hashed_password, $user_email);
+        $stmt->bindParam('ss', $hashed_password, $user_email);
 
         if ($stmt->execute()) {
             header('location: account.php?message=パスワードが更新されました');
@@ -49,22 +53,58 @@ if (isset($_POST['change_password'])) {
 }
 
 // 注文履歴の取得
-if (isset($_SESSION['user_id'])) {
-    $user_id = $_SESSION['user_id'];
-    $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ?");
-    $stmt->bind_param('i', $user_id);
-
-    if ($stmt->execute()) {
-        $orders = $stmt->get_result();
-    } else {
-        echo "注文情報の取得に失敗しました: " . $stmt->error;
+if (isset($_POST['place_order'])) {
+    if(!isset($_SESSION['user_id'])) {
+        header('location: login.php');
+        exit();
     }
-    $stmt->close();
+
+    // 初期化
+$order_cost = 0;
+$order_status = '';
+$user_id = '';
+$user_phone = '';
+$user_city = '';
+$user_address = '';
+$order_date = date('Y-m-d H:i:s');
+
+// カート情報から合計金額を計算
+if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        $order_cost += $item['product_price'] * $item['product_quantity'];
+    }
+}
+
+try {
+    $conn->beginTransaction();
+
+    // ordersテーブルへの挿入
+    $stmt = $conn->prepare("INSERT INTO orders (order_cost, order_status, user_id, user_phone, user_city, user_address, order_date)
+                           VALUES  (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$order_cost, $order_status, $user_id, $user_phone, $user_city, $user_address, $order_date]);
+    $order_id = $conn->lastInsertId();
+
+    // order_itemテーブルへの挿入
+    if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+        foreach ($_SESSION['cart'] as $item) {
+            $stmt = $conn->prepare("INSERT INTO order_item (order_id, product_id, product_name, product_image, product_price, product_quantity, user_id, order_date)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$order_id, $item['product_id'], $item['product_name'], $item['product_image'], $item['product_price'], $item['product_quantity'], $user_id, $order_date]);
+        }
+    }
+
+    $conn->commit();
+    unset($_SESSION['cart']);
+    header('location: account.php?payment_message=注文完了');
+    exit;
+} catch (PDOException $e) {
+    $conn->rollBack();
+    echo "エラー: " . $e->getMessage();
+}
 }
 
 
-include('layouts/header.php');
-$conn->close();
+
 ?>
 
 <!DOCTYPE html>
@@ -75,7 +115,7 @@ $conn->close();
     <title>Document</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
-    <link rel="stylesheet" href="/layouts/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>layouts/assets/css/style.css">
 </head>
 <body>
       
@@ -131,8 +171,9 @@ $conn->close();
             <div class="account-info">
                 <p>Name<span> <?php if (isset($_SESSION['user_name'])) { echo $_SESSION['user_name']; } ?></span></p>
                 <p>Email<span> <?php if (isset($_SESSION['user_email'])) { echo $_SESSION['user_email']; } ?></span></p>
-                <p><a href="#orders" id="order-btn">Your orders</a></p>
-                <p><a href="account.php?logout=1" id="logout-btn">Logout</a></p>
+                <p><a href="#orders" id="order-btn">注文内容</a></p>
+                <p><a href="order_history.php" id="order-history-btn">注文履歴</a></p>
+                <p><a href="account.php?logout=1" id="logout-btn">ログアウト</a></p>
             </div>
         </div>
         <div class="col-lg-6 col-md-12 col-sm-12">
@@ -162,9 +203,10 @@ $conn->close();
 </section>
 
 <!-- Orders Section -->
-<section id="orders" class="orders container my-5 py-3">
+<!-- Orders Section -->
+<section id="orders" class="orders container my-5 py-3" style="margin-top: 50px;">
     <div class="container mt-2 text-center">
-        <h2 class="font-weight-bold text-center">Your Orders</h2>
+        <h2 class="font-weight-bold">ご注文内容</h2>
         <hr class="mx-auto" style="width: 100px;">
     </div>
 
@@ -172,25 +214,33 @@ $conn->close();
         <table class="table orders-table text-center mx-auto">
             <thead>
                 <tr>
-                    <th>Order id</th>
-                    <th>Order cost</th>
-                    <th>Order status</th>
-                    <th>Order date</th>
-                    <th>Order details</th>
+                    <th>商品名</th>
+                    <th>個数</th>
+                    <th>商品の値段</th>
+                    <th>合計</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while ($row = $orders->fetch_assoc()) { ?>
+                <?php if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])): ?>
+                    <?php foreach ($_SESSION['cart'] as $item): 
+                        $total = $item['product_price'] * $item['product_quantity']; ?>
+                        <tr>
+                            <td>
+                                <div class="product-info">
+                                    <img src="<?= BASE_PATH . 'layouts/assets/img/' . $item['product_image']; ?>" alt="商品画像" style="width: 50px; height: 50px;">
+                                    <p><?= $item['product_name']; ?></p>
+                                </div>
+                            </td>
+                            <td><?= $item['product_quantity']; ?></td>
+                            <td>$<?= number_format($item['product_price']); ?></td>
+                            <td>$<?= number_format($total); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <tr>
-                        <td><?php echo $row['order_id']; ?></td> 
-                        <td><?php echo $row['order_cost']; ?></td> 
-                        <td><?php echo $row['order_status']; ?></td> 
-                        <td><?php echo $row['order_date']; ?></td> 
-                        <td>
-                            <a href="order_details.php?order_id=<?php echo $row['order_id']; ?>&order_status=<?php echo $row['order_status']; ?>" class="btn order-details-btn">details</a>
-                        </td>
+                        <td colspan="4">カートは空です。</td>
                     </tr>
-                <?php } ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -200,7 +250,7 @@ $conn->close();
 <footer class="mt-5 py-5">
     <div class="row container mx-auto pt-5">
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
-            <img src="<?php echo BASE_URL; ?>layouts/assets/img/8logo.png" alt="8logo">
+            <img src="<?php echo BASE_PATH; ?>layouts/assets/img/8logo.png" alt="8logo">
             <p class="pt-3">We provide the best products for the most affordable prices</p>
         </div>
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
@@ -232,10 +282,10 @@ $conn->close();
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
             <h5 class="pb-2">Instagram</h5>
             <div class="row">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
             </div>
         </div>
     </div>
@@ -243,7 +293,7 @@ $conn->close();
     <div class="copyright mt-5">
         <div class="row container mx-auto">
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4">
-                <img src="<?php echo BASE_URL; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
+                <img src="<?php echo BASE_PATH; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
             </div>
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4 text-nowrap mb-2">
                 <p>eCommerce @ 2025 All Right Reserved</p>

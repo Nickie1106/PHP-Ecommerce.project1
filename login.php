@@ -1,58 +1,50 @@
 <?php
-
 session_start();
+include("config.php");
 
-$servername = "localhost";
-$username = "nishimura";
-$password = "nishimura";
-$dbname = "nishimura_php_project";
-
-include('server/connection.php');
-
-if(isset($_SESSION['logged_in'])) {
-  header('location: account.php');
-  exit;
+if (isset($_SESSION['logged_in'])) {
+    header('location: account.php');
+    exit;
 }
 
-if(isset($_POST['login_btn'])) {
-  
-  $email = $_POST['email'];
-  $password = md5($_POST['password']);
+if (isset($_POST['login_btn'])) {
 
-  $stmt = $conn->prepare("SELECT id, name, email, password FROM users WHERE email = ? AND password = ? LIMIT 1");
+    $email = $_POST['email'];
+    $password = md5($_POST['password']); // 推奨: password_hash() / password_verify() に移行する
 
-  $stmt->bind_param('ss', $email, $password);
+    try {
+        // 準備されたステートメントを作成
+        $stmt = $conn->prepare("SELECT id, name, email, password FROM users WHERE email = :email AND password = :password LIMIT 1");
 
-  if ($stmt->execute()) {
+        // プレースホルダーに値をバインド
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $password);
 
-    $stmt->bind_result($user_id, $user_name, $user_email, $user_password);
-    $stmt->store_result();
+        // ステートメントを実行
+        $stmt->execute();
 
-    if($stmt->num_rows() == 1) {
-      $stmt->fetch();
+        // クエリ結果を取得
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-      $_SESSION['user_id'] = $user_id;
-      $_SESSION['user_email'] = $user_email;
-      $_SESSION['user_name'] = $user_name;
-      $_SESSION['logged_in'] = true;
+        if ($user) {
+            // ユーザーが見つかった場合、セッションに保存
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['logged_in'] = true;
 
-      header('location: dashbord.php?login_success=logged in successfully');
-
-    }else{
-      
-      header('location: login.php?error=Couldnt verify youe account');
-
+            header('location: index.php?login_success=logged in successfully');
+        } else {
+            // ユーザーが見つからない場合
+            header('location: login.php?error=Couldn\'t verify your account');
+        }
+    } catch (PDOException $e) {
+        // エラーハンドリング
+        header('location: login.php?error=Something went wrong: ' . $e->getMessage());
     }
-
-
-  }else{
-      header('location: login.php?error=something went wrong');
-  }
 }
-include('layouts/header.php'); 
-
+include('layouts/header.php');
 ?>
-
 
 
 
@@ -64,7 +56,7 @@ include('layouts/header.php');
     <title>HOME</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"/>
-    <link rel="stylesheet" href="layouts/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>/layouts/assets/css/style.css">
 </head>
 <body>
 
@@ -134,7 +126,7 @@ include('layouts/header.php');
 <footer class="mt-5 py-5">
     <div class="row container mx-auto pt-5">
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
-            <img src="<?php echo BASE_URL; ?>layouts/assets/img/8logo.png" alt="8logo">
+            <img src="<?php echo BASE_PATH; ?>layouts/assets/img/8logo.png" alt="8logo">
             <p class="pt-3">We provide the best products for the most affordable prices</p>
         </div>
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
@@ -166,10 +158,10 @@ include('layouts/header.php');
         <div class="footer-one col-lg-3 col-md-6 col-sm-12">
             <h5 class="pb-2">Instagram</h5>
             <div class="row">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
-                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_URL; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes1.jpg" alt="clothes1">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes2.jpg" alt="clothes2">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes3.jpg" alt="clothes3">
+                <img class="img-fluid w-25 h-100 m-2" src="<?php echo BASE_PATH; ?>layouts/assets/img/img.clothes4.jpg" alt="clothes4">
             </div>
         </div>
     </div>
@@ -177,7 +169,7 @@ include('layouts/header.php');
     <div class="copyright mt-5">
         <div class="row container mx-auto">
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4">
-                <img src="<?php echo BASE_URL; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
+                <img src="<?php echo BASE_PATH; ?>layouts/assets/img/payment.logo.png" alt="Payment Logo">
             </div>
             <div class="col-lg-3 col-md-5 col-sm-12 mb-4 text-nowrap mb-2">
                 <p>eCommerce @ 2025 All Right Reserved</p>

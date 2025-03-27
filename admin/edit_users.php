@@ -1,75 +1,141 @@
 <?php
-session_start(); 
+include_once('../config.php'); // config.phpが1つ上のディレクトリにある場合
+
+session_start();
 
 // セッションが無効の場合はログイン画面にリダイレクト
-if ($_SESSION['admin_login'] === false) {
-    header("location:./index.php");
+if (!isset($_SESSION['admin_login']) || $_SESSION['admin_login'] === false) {
+    header("location: " . BASE_PATH . "index.php");
     exit;
 }
 
-// DB接続とユーザー情報取得
-if (isset($_GET['id'])) {
-    try {
-        $dbh = new PDO("mysql:host=localhost;dbname=nishimura_php_project", "nishimura", "nishimura");
-        $stmt = $dbh->prepare("SELECT * FROM users WHERE id = :id"); // 修正: user_id → id
-        $stmt->bindParam(':id', $_GET['id'], PDO::PARAM_INT);
-        $stmt->execute();
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        echo "エラー: " . $e->getMessage();
-    }
+// DB接続
+try {
+    $dbh = new PDO("mysql:host=localhost;dbname=nishimura_php_project", "nishimura", "nishimura");
+} catch (PDOException $e) {
+    exit($e->getMessage());
 }
 
-// フォームが送信された場合の処理
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        // 修正: UPDATEのSQL文とバインドパラメータを適切に修正
-        $stmt = $dbh->prepare("UPDATE users SET name = :name, email = :email WHERE id = :id");
-        $stmt->bindParam(':name', $_POST['user_name']);
-        $stmt->bindParam(':email', $_POST['user_email']);
-        $stmt->bindParam(':id', $_POST['user_id'], PDO::PARAM_INT); // 修正: user_id → id
-        $stmt->execute();
-        header("location: edit_users.php");
-        exit;
-    } catch (PDOException $e) {
-        echo "エラー: " . $e->getMessage();
-    }
+// 1ページあたりの表示件数を設定
+$rows = 10;
+
+// 現在のページを取得（デフォルト値は1）
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+
+// オフセットを計算
+$offset = ($page - 1) * $rows;
+
+// 検索処理
+$name = isset($_GET['name']) ? '%' . htmlspecialchars($_GET['name'], ENT_QUOTES, 'utf-8') . '%' : '';
+
+// 全件数取得
+$sql = $name ? "SELECT COUNT(*) FROM users WHERE name LIKE :name" : "SELECT COUNT(*) FROM users";
+$stmt = $dbh->prepare($sql);
+if ($name) {
+    $stmt->bindParam(":name", $name);
 }
+
+$stmt->execute();
+$all_rows = $stmt->fetchColumn();
+
+// ページ数計算
+$pages = ceil($all_rows / $rows);
+$next = ($page < $pages) ? $page + 1 : null;
+$prev = ($page > 1) ? $page - 1 : null;
+
+// ユーザー一覧取得
+$sql = $name ? "SELECT * FROM users WHERE name LIKE :name LIMIT :offset, :rows" : "SELECT * FROM users LIMIT :offset, :rows";
+$stmt = $dbh->prepare($sql);
+if ($name) {
+    $stmt->bindParam(":name", $name);
+}
+
+$stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+$stmt->bindParam(":rows", $rows, PDO::PARAM_INT);
+$stmt->execute();
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ユーザー編集</title>
+    <title>会員管理</title>
+    <link rel="icon" href="<?php echo BASE_PATH; ?>admin/favicon.ico">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <!-- 明るい緑の背景を設定 -->
-    <div class="container py-5 mt-5 bg-success text-white">
-        <h1>ユーザー編集</h1>
-        <?php if ($user): ?>
-            <form action="edit_users.php" method="post">
-                <!-- user_idをhiddenフィールドとして送信 -->
-                <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user['id']); ?>">
-                <div class="form-group">
-                    <label for="user_name">ユーザー名</label>
-                    <input type="text" name="user_name" class="form-control" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+    <header>
+        <div class="container">
+            <div class="header-logo">
+                <h1><a href="<?php echo BASE_PATH; ?>dashboard.php">管理画面</a></h1>
+            </div>
+            <nav class="menu-right menu">
+                <a href="<?php echo BASE_PATH; ?>index.php">ログアウト</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="wrapper">
+            <div class="container">
+                <div class="wrapper-title">
+                    <h3>会員管理</h3>
                 </div>
-                <div class="form-group">
-                    <label for="user_email">メールアドレス</label>
-                    <input type="email" name="user_email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                <form class="serch" action="<?php echo BASE_PATH; ?>admin/users.php" method="GET">
+                    <input type="text" name="name" placeholder="名前検索">
+                    <button type="submit" class="btn btn-blue">検索</button>
+                </form>
+                <div class="list">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>id</th>
+                                <th>名前</th>
+                                <th>メールアドレス</th>
+                                <th>送信</th>
+                                <th>編集/削除</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($users as $user): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($user['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td>
+                                        <?php echo $user['email_verified_at'] ? '受信済み' : '未送信'; ?>
+                                    </td>
+                                    <td>
+                                        <a href="<?php echo BASE_PATH; ?>edit_users.php?id=<?php echo $user['id']; ?>" class="btn btn-green">編集</a>
+                                        <a href="<?php echo BASE_PATH; ?>delete_product.php?id=<?php echo $user['id']; ?>" class="btn btn-red" onclick="return confirm('本当に削除しますか？');">削除</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <ul class="paging">
+                        <li><a href="<?php echo BASE_PATH; ?>users.php?name=<?php echo urlencode($_GET['name'] ?? ''); ?>">« 最初</a></li>
+                        <?php if ($prev): ?>
+                            <li><a href="<?php echo BASE_PATH; ?>users.php?page=<?php echo $prev; ?>&name=<?php echo urlencode($_GET['name'] ?? ''); ?>"><?php echo $page - 1; ?></a></li>
+                        <?php endif; ?>
+                        <li><span><?php echo $page; ?></span></li>
+                        <?php if ($next): ?>
+                            <li><a href="<?php echo BASE_PATH; ?>users.php?page=<?php echo $next; ?>&name=<?php echo urlencode($_GET['name'] ?? ''); ?>"><?php echo $page + 1; ?></a></li>
+                        <?php endif; ?>
+                        <li><a href="<?php echo BASE_PATH; ?>users.php?page=<?php echo $pages; ?>&name=<?php echo urlencode($_GET['name'] ?? ''); ?>">最後 »</a></li>
+                    </ul>
                 </div>
-                <button type="submit" class="btn btn-primary">保存</button>
-            </form>
-        <?php else: ?>
-            <p>ユーザー情報が見つかりませんでした。</p>
-        <?php endif; ?>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>Copyright &copy; 2018 SQUARE, inc</p>
+        </div>
+    </footer>
 </body>
 </html>

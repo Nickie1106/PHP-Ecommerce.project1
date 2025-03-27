@@ -1,11 +1,16 @@
 <?php
-    session_start();
 
-    session_unset();
+session_start(); // セッションを開始
 
-    session_destroy();
+// セッションをクリア
+session_unset();
+session_destroy();
 
-    header("location: index.php");
-    exit;
-    
+// config.php をインクルード
+include_once('../config.php');
+
+// 絶対パスを使用してリダイレクト
+header("Location: " . BASE_PATH . "index.php");
+exit;
+
 ?>
